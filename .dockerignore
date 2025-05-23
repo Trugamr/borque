@@ -1,5 +1,7 @@
 .git/
 tmp/
 
+Dockerfile
 .dockerignore
+
 borque.db

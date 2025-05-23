@@ -25,7 +25,11 @@ func main() {
 	ctx := context.Background()
 
 	// Connect to the database
-	db, err := sql.Open("sqlite", "./borque.db")
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		dbPath = "./borque.db"
+	}
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Fatalf("Error opening database: %v", err)
 	}
