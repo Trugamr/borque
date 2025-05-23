@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    method TEXT,
+    path TEXT NOT NULL,
+    headers TEXT NOT NULL CHECK (json_valid(headers)),
+    query TEXT NOT NULL,
+    body TEXT NOT NULL,    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
