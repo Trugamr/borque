@@ -10,6 +10,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/trugamr/borque/internal/repository"
 
@@ -40,9 +42,10 @@ func main() {
 
 	// Start the server
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	indexHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		indexRoute(w, r, queries)
 	})
+	mux.Handle("/", apiKeyAuthMiddleware(indexHandler))
 
 	addr := net.TCPAddr{
 		IP:   net.ParseIP("0.0.0.0"),
@@ -53,6 +56,34 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
+}
+
+func apiKeyAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiKey := os.Getenv("API_KEY")
+		if apiKey != "" {
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				log.Printf("Missing Authorization header")
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			parts := strings.Split(authHeader, " ")
+			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+				log.Printf("Invalid Authorization header format")
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			if parts[1] != apiKey {
+				log.Printf("Invalid API key")
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func indexRoute(w http.ResponseWriter, r *http.Request, queries *repository.Queries) {
